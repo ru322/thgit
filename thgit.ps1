@@ -236,11 +236,14 @@ function Invoke-Setup {
     
     # 2. Gitリポジトリの初期化
     $gitDir = Join-Path $ScriptDir ".git"
+    $isNewRepo = $false
+    
     if (-not (Test-Path $gitDir)) {
         Write-Log "Gitリポジトリを初期化中..."
         Push-Location $ScriptDir
         try {
             git init
+            $isNewRepo = $true
             
             # リモートリポジトリ登録
             $remoteUrl = Read-Host "リモートリポジトリのURLを入力してください"
@@ -255,50 +258,81 @@ function Invoke-Setup {
         Write-Log "既存のGitリポジトリを使用します"
     }
     
-    # 3. .gitignore / .gitattributes の作成
-    Initialize-GitIgnore
-    Initialize-GitAttributes
-    
-    # 4. 初回同期（Pull）
+    # 3. 初回同期（Pull）- .gitignore等より先に実行
     if (Test-Online) {
         Write-Log "リモートからデータを取得中..."
         Push-Location $ScriptDir
         try {
-            $pullResult = git pull origin master 2>&1
-            $pullExitCode = $LASTEXITCODE
+            # リモートブランチの情報を取得
+            git fetch origin 2>$null
             
-            if ($pullExitCode -ne 0) {
-                # コンフリクト検出
-                $status = git status --porcelain 2>$null
-                if ($status -match "^UU|^AA|^DD") {
-                    Write-Log "競合が発生しました。"
-                    Write-Log "リモート優先: サーバーのデータで上書き"
-                    Write-Log "ローカル優先: 現在のデータを維持"
-                    $choice = Read-Host "どちらを優先しますか？ (R: リモート / L: ローカル) [R]"
-                    
-                    if ($choice -eq "L" -or $choice -eq "l") {
-                        # ローカル優先
-                        git checkout --ours .
-                        git add .
-                        git commit -m "Resolve conflict: keep local"
-                        Write-Log "ローカルのデータを維持しました"
+            # リモートにデータがあるか確認
+            $remoteBranch = git ls-remote --heads origin master 2>$null
+            
+            if ($remoteBranch) {
+                Write-Log "リモートにデータが存在します"
+                
+                if ($isNewRepo) {
+                    # 新規リポジトリの場合、リモートを直接チェックアウト
+                    git checkout -b master origin/master 2>$null
+                    if ($LASTEXITCODE -ne 0) {
+                        # ローカルファイルとの衝突がある場合
+                        Write-Log "ローカルファイルとリモートデータの衝突を検出"
+                        Write-Log "リモート優先: サーバーのデータで上書き"
+                        Write-Log "ローカル優先: 現在のデータを維持してマージ"
+                        $choice = Read-Host "どちらを優先しますか？ (R: リモート / L: ローカル) [R]"
+                        
+                        if ($choice -eq "L" -or $choice -eq "l") {
+                            # ローカル優先: 一旦コミットしてからマージ
+                            git add -A
+                            git commit -m "Initial local data"
+                            git branch -M master
+                            git pull origin master --allow-unrelated-histories -X ours
+                            Write-Log "ローカルのデータを維持してマージしました"
+                        } else {
+                            # リモート優先（デフォルト）: バックアップしてリセット
+                            New-Backup
+                            git checkout -f -b master origin/master
+                            Write-Log "リモートのデータで上書きしました"
+                        }
                     } else {
-                        # リモート優先（デフォルト）
+                        Write-Log "リモートデータを取得しました"
+                    }
+                } else {
+                    # 既存リポジトリの場合
+                    $pullResult = git pull origin master 2>&1
+                    $pullExitCode = $LASTEXITCODE
+                    
+                    if ($pullExitCode -ne 0) {
+                        Write-Log "Pull中にエラーが発生: $pullResult"
+                        Write-Log "リモート優先で解決します..."
                         New-Backup
                         git fetch origin
                         git reset --hard origin/master
                         Write-Log "リモートのデータで上書きしました"
+                    } else {
+                        Write-Log "同期完了"
                     }
                 }
             } else {
-                Write-Log "同期完了"
+                Write-Log "リモートにデータがありません（新規リポジトリ）"
+                # masterブランチを作成
+                git checkout -b master 2>$null
             }
         } finally {
             Pop-Location
         }
     } else {
         Write-Log "オフラインのため、同期をスキップします"
+        # オフライン時はmasterブランチを作成
+        Push-Location $ScriptDir
+        git checkout -b master 2>$null
+        Pop-Location
     }
+    
+    # 4. .gitignore / .gitattributes の作成（存在しない場合のみ）
+    Initialize-GitIgnore
+    Initialize-GitAttributes
     
     # 5. ゲームフォルダの探索とショートカット作成
     $gameFolders = Find-GameFolders
