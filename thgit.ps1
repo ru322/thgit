@@ -290,10 +290,22 @@ function Invoke-Setup {
     Write-Log "リンクを作成中..."
     foreach ($item in $syncItems) {
         $isDirectory = $item.StartsWith("/")
-        $itemName = $item.TmasterrimStart("/")
+        $itemName = $item.TrimStart("/")
+        
+        # 空文字列チェック（重要: 空だとゲームフォルダ全体が対象になってしまう）
+        if ([string]::IsNullOrWhiteSpace($itemName)) {
+            Write-Log "警告: 無効な同期アイテムをスキップします: '$item'"
+            continue
+        }
         
         $sourcePath = Join-Path $ScriptDir $itemName
         $targetPath = Join-Path $gameDataDir $itemName
+        
+        # 安全チェック: ソースパスがスクリプトディレクトリそのものでないことを確認
+        if ($sourcePath -eq $ScriptDir) {
+            Write-Log "エラー: ゲームフォルダ自体を同期対象にすることはできません"
+            continue
+        }
         
         # 既にリンクの場合はスキップ
         if (Test-Path $sourcePath) {
