@@ -74,7 +74,7 @@ function Get-TargetExe {
 }
 
 function Get-GameId {
-    $thExes = Get-ChildItem -Path $ScriptDir -Filter "th*.exe" | Where-Object { $_.Name -match "^th0[678]\.exe$" }
+    $thExes = Get-ChildItem -Path $ScriptDir -Filter "th*.exe" | Where-Object { $_.Name -match "^th[0-9]+\.exe$" }
     if ($thExes) {
         return $thExes[0].BaseName
     }
