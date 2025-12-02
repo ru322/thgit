@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 ru322
 <#
 .SYNOPSIS
     東方Project データ同期・管理ツール (thgit)
