@@ -65,7 +65,7 @@ function Get-TargetExe {
     }
     
     # thxx.exe を探す
-    $thExes = Get-ChildItem -Path $ScriptDir -Filter "th*.exe" | Where-Object { $_.Name -match "^th0[678]\.exe$" }
+    $thExes = Get-ChildItem -Path $ScriptDir -Filter "th*.exe" | Where-Object { $_.Name -match "^th[0-9]+\.exe$" }
     if ($thExes) {
         return $thExes[0].FullName
     }
@@ -222,7 +222,7 @@ function Invoke-Setup {
     # 作品ID特定
     $gameId = Get-GameId
     if (-not $gameId) {
-        Write-Log "エラー: 対象のゲーム実行ファイル(th06.exe/th07.exe/th08.exe)が見つかりません"
+        Write-Log "エラー: 対象のゲーム実行ファイルが見つかりません"
         Read-Host "Enterキーを押して終了"
         exit 1
     }
@@ -359,7 +359,7 @@ function Invoke-Setup {
     $targetExe = Get-TargetExe
     $shortcutName = "$gameId-thgit.lnk"
     $scriptPath = Join-Path $ScriptDir "thgit.ps1"
-    $arguments = "-ExecutionPolicy Bypass -File `"$scriptPath`""
+    $arguments = "-ExecutionPolicy Bypass -NoExit -File `"$scriptPath`""
     
     # デスクトップ
     $desktopPath = [Environment]::GetFolderPath("Desktop")
