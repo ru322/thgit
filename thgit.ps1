@@ -1,23 +1,23 @@
 <#
 .SYNOPSIS
-    æ±æ–¹Project ãƒ‡ãƒ¼ã‚¿åŒæœŸãƒ»ç®¡ç†ãƒ„ãƒ¼ãƒ« (thgit)
+    “Œ•ûProject ƒf[ƒ^“¯ŠúEŠÇ—ƒc[ƒ‹ (thgit)
 .DESCRIPTION
-    Git/GitHubã‚’åˆ©ç”¨ã—ã¦æ±æ–¹Projectã®ã‚»ãƒ¼ãƒ–ãƒ‡ãƒ¼ã‚¿ã€ãƒªãƒ—ãƒ¬ã‚¤ã€è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã‚’
-    è¤‡æ•°PCé–“ã§åŒæœŸãƒ»ç®¡ç†ã™ã‚‹ãŸã‚ã®PowerShellã‚¹ã‚¯ãƒªãƒ—ãƒˆ
+    Git/GitHub‚ğ—˜—p‚µ‚Ä“Œ•ûProject‚ÌƒZ[ƒuƒf[ƒ^AƒŠƒvƒŒƒCAİ’èƒtƒ@ƒCƒ‹‚ğ
+    •¡”PCŠÔ‚Å“¯ŠúEŠÇ—‚·‚é‚½‚ß‚ÌPowerShellƒXƒNƒŠƒvƒg
     
-    æ§‹æˆ:
-    - å…±æœ‰ãƒªãƒã‚¸ãƒˆãƒª: è¦ªãƒ•ã‚©ãƒ«ãƒ€ã® .thgit ã«ä½œæˆ
-    - å®Ÿãƒ‡ãƒ¼ã‚¿: .thgit/thxx/ ã«ä¿å­˜
-    - ã‚²ãƒ¼ãƒ ãƒ•ã‚©ãƒ«ãƒ€: ãƒãƒ¼ãƒ‰ãƒªãƒ³ã‚¯(ãƒ•ã‚¡ã‚¤ãƒ«)/ã‚¸ãƒ£ãƒ³ã‚¯ã‚·ãƒ§ãƒ³(ãƒ•ã‚©ãƒ«ãƒ€)ã§æ¥ç¶š
-    - ãƒªãƒ¢ãƒ¼ãƒˆ: /th06/, /th07/, /th08/ ã®æ§‹æˆ
+    \¬:
+    - ‹¤—LƒŠƒ|ƒWƒgƒŠ: eƒtƒHƒ‹ƒ_‚Ì .thgit ‚Éì¬
+    - Àƒf[ƒ^: .thgit/thxx/ ‚É•Û‘¶
+    - ƒQ[ƒ€ƒtƒHƒ‹ƒ_: ƒn[ƒhƒŠƒ“ƒN(ƒtƒ@ƒCƒ‹)/ƒWƒƒƒ“ƒNƒVƒ‡ƒ“(ƒtƒHƒ‹ƒ_)‚ÅÚ‘±
+    - ƒŠƒ‚[ƒg: /th06/, /th07/, /th08/ ‚Ì\¬
 #>
 
-# ã‚¹ã‚¯ãƒªãƒ—ãƒˆã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’å–å¾—
+# ƒXƒNƒŠƒvƒg‚ÌƒfƒBƒŒƒNƒgƒŠ‚ğæ“¾
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ParentDir = Split-Path -Parent $ScriptDir
 $RepoPath = Join-Path $ParentDir ".thgit"
 
-# --- ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£é–¢æ•° ---
+# --- ƒ†[ƒeƒBƒŠƒeƒBŠÖ” ---
 
 function Write-Log {
     param([string]$Message)
@@ -43,28 +43,28 @@ function Test-GitInstalled {
 }
 
 function Install-Git {
-    Write-Log "GitãŒã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚wingetã§ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã—ã¾ã™..."
+    Write-Log "Git‚ªƒCƒ“ƒXƒg[ƒ‹‚³‚ê‚Ä‚¢‚Ü‚¹‚ñBwinget‚ÅƒCƒ“ƒXƒg[ƒ‹‚µ‚Ü‚·..."
     try {
         winget install --id Git.Git -e --source winget
-        Write-Log "Gitã®ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ãŒå®Œäº†ã—ã¾ã—ãŸã€‚"
-        Write-Log "ç’°å¢ƒå¤‰æ•°ã‚’åæ˜ ã™ã‚‹ãŸã‚ã€ã“ã®ã‚¹ã‚¯ãƒªãƒ—ãƒˆã‚’å†å®Ÿè¡Œã—ã¦ãã ã•ã„ã€‚"
-        Read-Host "Enterã‚­ãƒ¼ã‚’æŠ¼ã—ã¦çµ‚äº†"
+        Write-Log "Git‚ÌƒCƒ“ƒXƒg[ƒ‹‚ªŠ®—¹‚µ‚Ü‚µ‚½B"
+        Write-Log "ŠÂ‹«•Ï”‚ğ”½‰f‚·‚é‚½‚ßA‚±‚ÌƒXƒNƒŠƒvƒg‚ğÄÀs‚µ‚Ä‚­‚¾‚³‚¢B"
+        Read-Host "EnterƒL[‚ğ‰Ÿ‚µ‚ÄI—¹"
         exit 0
     } catch {
-        Write-Log "Gitã®ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã«å¤±æ•—ã—ã¾ã—ãŸ: $_"
-        Read-Host "Enterã‚­ãƒ¼ã‚’æŠ¼ã—ã¦çµ‚äº†"
+        Write-Log "Git‚ÌƒCƒ“ƒXƒg[ƒ‹‚É¸”s‚µ‚Ü‚µ‚½: $_"
+        Read-Host "EnterƒL[‚ğ‰Ÿ‚µ‚ÄI—¹"
         exit 1
     }
 }
 
 function Get-TargetExe {
-    # vpatch.exe ã‚’å„ªå…ˆ
+    # vpatch.exe ‚ğ—Dæ
     $vpatch = Join-Path $ScriptDir "vpatch.exe"
     if (Test-Path $vpatch) {
         return $vpatch
     }
     
-    # thxx.exe ã‚’æ¢ã™
+    # thxx.exe ‚ğ’T‚·
     $thExes = Get-ChildItem -Path $ScriptDir -Filter "th*.exe" | Where-Object { $_.Name -match "^th0[678]\.exe$" }
     if ($thExes) {
         return $thExes[0].FullName
@@ -108,55 +108,55 @@ function New-Backup {
     $backupDir = Join-Path $ScriptDir "_backup_$timestamp"
     $gameDataDir = Join-Path $RepoPath $GameId
     
-    Write-Log "ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—ã‚’ä½œæˆä¸­: $backupDir"
+    Write-Log "ƒoƒbƒNƒAƒbƒv‚ğì¬’†: $backupDir"
     
     if (Test-Path $gameDataDir) {
         Copy-Item -Path $gameDataDir -Destination $backupDir -Recurse -Force
     }
-    Write-Log "ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—å®Œäº†"
+    Write-Log "ƒoƒbƒNƒAƒbƒvŠ®—¹"
 }
 
 function Get-SyncConfig {
     param([string]$GameId)
     
-    # 1. ãƒ­ãƒ¼ã‚«ãƒ«ã®sync.jsonã‚’ç¢ºèªï¼ˆå„ªå…ˆï¼‰
+    # 1. ƒ[ƒJƒ‹‚Ìsync.json‚ğŠm”Fi—Dæj
     $localSyncJson = Join-Path $ScriptDir "sync.json"
-    Write-Log "sync.jsonã‚’æ¤œç´¢ä¸­: $localSyncJson"
+    Write-Log "sync.json‚ğŒŸõ’†: $localSyncJson"
     
     if (Test-Path $localSyncJson) {
-        Write-Log "ãƒ­ãƒ¼ã‚«ãƒ«ã®sync.jsonã‚’æ¤œå‡ºã—ã¾ã—ãŸ"
+        Write-Log "ƒ[ƒJƒ‹‚Ìsync.json‚ğŒŸo‚µ‚Ü‚µ‚½"
         try {
             $config = Get-Content $localSyncJson -Raw | ConvertFrom-Json
-            Write-Log "sync.jsonèª­ã¿è¾¼ã¿æˆåŠŸ"
+            Write-Log "sync.json“Ç‚İ‚İ¬Œ÷"
             return $config
         } catch {
-            Write-Log "è­¦å‘Š: ãƒ­ãƒ¼ã‚«ãƒ«sync.jsonã®è§£æã«å¤±æ•—ã—ã¾ã—ãŸ: $_"
+            Write-Log "Œx: ƒ[ƒJƒ‹sync.json‚Ì‰ğÍ‚É¸”s‚µ‚Ü‚µ‚½: $_"
         }
     } else {
-        Write-Log "ãƒ­ãƒ¼ã‚«ãƒ«ã«sync.jsonãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“"
+        Write-Log "ƒ[ƒJƒ‹‚Ésync.json‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ"
     }
     
-    # 2. ãƒªãƒ¢ãƒ¼ãƒˆã‹ã‚‰ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰
+    # 2. ƒŠƒ‚[ƒg‚©‚çƒ_ƒEƒ“ƒ[ƒh
     $syncJsonUrl = "https://raw.githubusercontent.com/ru322/thgit/main/$GameId/sync.json"
-    Write-Log "ãƒªãƒ¢ãƒ¼ãƒˆã‹ã‚‰sync.jsonã‚’å–å¾—ä¸­: $syncJsonUrl"
+    Write-Log "ƒŠƒ‚[ƒg‚©‚çsync.json‚ğæ“¾’†: $syncJsonUrl"
     
     try {
         $response = Invoke-WebRequest -Uri $syncJsonUrl -UseBasicParsing -TimeoutSec 10
         $syncConfig = $response.Content | ConvertFrom-Json
         
-        # ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ã—ãŸsync.jsonã‚’ãƒ­ãƒ¼ã‚«ãƒ«ã«ä¿å­˜
+        # ƒ_ƒEƒ“ƒ[ƒh‚µ‚½sync.json‚ğƒ[ƒJƒ‹‚É•Û‘¶
         $response.Content | Out-File -FilePath $localSyncJson -Encoding UTF8
-        Write-Log "sync.jsonã‚’ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ã—ã¦ãƒ­ãƒ¼ã‚«ãƒ«ã«ä¿å­˜ã—ã¾ã—ãŸ"
+        Write-Log "sync.json‚ğƒ_ƒEƒ“ƒ[ƒh‚µ‚Äƒ[ƒJƒ‹‚É•Û‘¶‚µ‚Ü‚µ‚½"
         
         return $syncConfig
     } catch {
-        Write-Log "ã‚¨ãƒ©ãƒ¼: sync.jsonã®å–å¾—ã«å¤±æ•—ã—ã¾ã—ãŸ"
-        Write-Log "è©³ç´°: $_"
+        Write-Log "ƒGƒ‰[: sync.json‚Ìæ“¾‚É¸”s‚µ‚Ü‚µ‚½"
+        Write-Log "Ú×: $_"
         Write-Log ""
-        Write-Log "sync.jsonã‚’ã‚²ãƒ¼ãƒ ãƒ•ã‚©ãƒ«ãƒ€ã«æ‰‹å‹•ã§é…ç½®ã—ã¦ãã ã•ã„"
-        Write-Log "å½¢å¼ä¾‹:"
+        Write-Log "sync.json‚ğƒQ[ƒ€ƒtƒHƒ‹ƒ_‚Éè“®‚Å”z’u‚µ‚Ä‚­‚¾‚³‚¢"
+        Write-Log "Œ`®—á:"
         Write-Log '  {"sync-items": ["/replay", "score.dat", "th08.cfg"]}'
-        Read-Host "Enterã‚­ãƒ¼ã‚’æŠ¼ã—ã¦çµ‚äº†"
+        Read-Host "EnterƒL[‚ğ‰Ÿ‚µ‚ÄI—¹"
         exit 1
     }
 }
@@ -170,7 +170,7 @@ function Get-GitignoreContent {
         $response = Invoke-WebRequest -Uri $gitignoreUrl -UseBasicParsing
         return $response.Content
     } catch {
-        # ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®.gitignore
+        # ƒfƒtƒHƒ‹ƒg‚Ì.gitignore
         return @"
 # Default .gitignore
 *
@@ -191,126 +191,126 @@ function New-LinkItem {
     )
     
     if ($IsDirectory) {
-        # ãƒ•ã‚©ãƒ«ãƒ€: ã‚¸ãƒ£ãƒ³ã‚¯ã‚·ãƒ§ãƒ³ï¼ˆç®¡ç†è€…æ¨©é™ä¸è¦ï¼‰
+        # ƒtƒHƒ‹ƒ_: ƒWƒƒƒ“ƒNƒVƒ‡ƒ“iŠÇ—ÒŒ ŒÀ•s—vj
         cmd /c mklink /J "$LinkPath" "$TargetPath" 2>$null
         if ($LASTEXITCODE -ne 0) {
-            Write-Log "ã‚¨ãƒ©ãƒ¼: ã‚¸ãƒ£ãƒ³ã‚¯ã‚·ãƒ§ãƒ³ã®ä½œæˆã«å¤±æ•—ã—ã¾ã—ãŸ: $LinkPath"
+            Write-Log "ƒGƒ‰[: ƒWƒƒƒ“ƒNƒVƒ‡ƒ“‚Ìì¬‚É¸”s‚µ‚Ü‚µ‚½: $LinkPath"
             return $false
         }
     } else {
-        # ãƒ•ã‚¡ã‚¤ãƒ«: ãƒãƒ¼ãƒ‰ãƒªãƒ³ã‚¯ï¼ˆç®¡ç†è€…æ¨©é™ä¸è¦ã€åŒä¸€ãƒ‰ãƒ©ã‚¤ãƒ–å¿…é ˆï¼‰
+        # ƒtƒ@ƒCƒ‹: ƒn[ƒhƒŠƒ“ƒNiŠÇ—ÒŒ ŒÀ•s—vA“¯ˆêƒhƒ‰ƒCƒu•K{j
         cmd /c mklink /H "$LinkPath" "$TargetPath" 2>$null
         if ($LASTEXITCODE -ne 0) {
-            Write-Log "ã‚¨ãƒ©ãƒ¼: ãƒãƒ¼ãƒ‰ãƒªãƒ³ã‚¯ã®ä½œæˆã«å¤±æ•—ã—ã¾ã—ãŸ: $LinkPath"
-            Write-Log "â€»ãƒãƒ¼ãƒ‰ãƒªãƒ³ã‚¯ã¯åŒä¸€ãƒ‰ãƒ©ã‚¤ãƒ–å†…ã§ã®ã¿ä½œæˆå¯èƒ½ã§ã™"
+            Write-Log "ƒGƒ‰[: ƒn[ƒhƒŠƒ“ƒN‚Ìì¬‚É¸”s‚µ‚Ü‚µ‚½: $LinkPath"
+            Write-Log "¦ƒn[ƒhƒŠƒ“ƒN‚Í“¯ˆêƒhƒ‰ƒCƒu“à‚Å‚Ì‚İì¬‰Â”\‚Å‚·"
             return $false
         }
     }
     return $true
 }
 
-# --- ã‚»ãƒƒãƒˆã‚¢ãƒƒãƒ—ãƒ•ã‚§ãƒ¼ã‚º ---
+# --- ƒZƒbƒgƒAƒbƒvƒtƒF[ƒY ---
 
 function Invoke-Setup {
-    Write-Log "=== åˆå›ã‚»ãƒƒãƒˆã‚¢ãƒƒãƒ—ã‚’é–‹å§‹ã—ã¾ã™ ==="
+    Write-Log "=== ‰‰ñƒZƒbƒgƒAƒbƒv‚ğŠJn‚µ‚Ü‚· ==="
     
-    # Gitç¢ºèªãƒ»ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«
+    # GitŠm”FEƒCƒ“ƒXƒg[ƒ‹
     if (-not (Test-GitInstalled)) {
         Install-Git
     }
     
-    # ä½œå“IDç‰¹å®š
+    # ì•iID“Á’è
     $gameId = Get-GameId
     if (-not $gameId) {
-        Write-Log "ã‚¨ãƒ©ãƒ¼: å¯¾è±¡ã®ã‚²ãƒ¼ãƒ å®Ÿè¡Œãƒ•ã‚¡ã‚¤ãƒ«(th06.exe/th07.exe/th08.exe)ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“"
-        Read-Host "Enterã‚­ãƒ¼ã‚’æŠ¼ã—ã¦çµ‚äº†"
+        Write-Log "ƒGƒ‰[: ‘ÎÛ‚ÌƒQ[ƒ€Àsƒtƒ@ƒCƒ‹(th06.exe/th07.exe/th08.exe)‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ"
+        Read-Host "EnterƒL[‚ğ‰Ÿ‚µ‚ÄI—¹"
         exit 1
     }
-    Write-Log "æ¤œå‡ºã—ãŸä½œå“: $gameId"
+    Write-Log "ŒŸo‚µ‚½ì•i: $gameId"
     
-    # sync.jsonå–å¾—
+    # sync.jsonæ“¾
     $syncConfig = Get-SyncConfig -GameId $gameId
     $syncItems = $syncConfig.'sync-items'
-    Write-Log "åŒæœŸå¯¾è±¡: $($syncItems -join ', ')"
+    Write-Log "“¯Šú‘ÎÛ: $($syncItems -join ', ')"
     
-    # å…±æœ‰ãƒªãƒã‚¸ãƒˆãƒªã®ç¢ºèªãƒ»ä½œæˆ
+    # ‹¤—LƒŠƒ|ƒWƒgƒŠ‚ÌŠm”FEì¬
     $isFirstSetup = -not (Test-Path $RepoPath)
     
     if ($isFirstSetup) {
-        Write-Log "å…±æœ‰ãƒªãƒã‚¸ãƒˆãƒªã‚’ä½œæˆä¸­: $RepoPath"
+        Write-Log "‹¤—LƒŠƒ|ƒWƒgƒŠ‚ğì¬’†: $RepoPath"
         New-Item -ItemType Directory -Path $RepoPath -Force | Out-Null
         Push-Location $RepoPath
         try {
             git init
             
-            # ãƒªãƒ¢ãƒ¼ãƒˆãƒªãƒã‚¸ãƒˆãƒªç™»éŒ²
-            $remoteUrl = Read-Host "ãƒªãƒ¢ãƒ¼ãƒˆãƒªãƒã‚¸ãƒˆãƒªã®URLã‚’å…¥åŠ›ã—ã¦ãã ã•ã„"
+            # ƒŠƒ‚[ƒgƒŠƒ|ƒWƒgƒŠ“o˜^
+            $remoteUrl = Read-Host "ƒŠƒ‚[ƒgƒŠƒ|ƒWƒgƒŠ‚ÌURL‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢"
             if ($remoteUrl) {
                 git remote add origin $remoteUrl
-                Write-Log "ãƒªãƒ¢ãƒ¼ãƒˆãƒªãƒã‚¸ãƒˆãƒªã‚’ç™»éŒ²ã—ã¾ã—ãŸ: $remoteUrl"
+                Write-Log "ƒŠƒ‚[ƒgƒŠƒ|ƒWƒgƒŠ‚ğ“o˜^‚µ‚Ü‚µ‚½: $remoteUrl"
                 
-                # ãƒªãƒ¢ãƒ¼ãƒˆã‹ã‚‰pullè©¦è¡Œ
+                # ƒŠƒ‚[ƒg‚©‚çpulls
                 if (Test-Online) {
-                    Write-Log "ãƒªãƒ¢ãƒ¼ãƒˆã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ä¸­..."
-                    git pull origin main 2>$null
+                    Write-Log "ƒŠƒ‚[ƒg‚©‚çƒf[ƒ^‚ğæ“¾’†..."
+                    git pull origin master 2>$null
                 }
             }
         } finally {
             Pop-Location
         }
     } else {
-        Write-Log "æ—¢å­˜ã®å…±æœ‰ãƒªãƒã‚¸ãƒˆãƒªã‚’ä½¿ç”¨ã—ã¾ã™: $RepoPath"
-        # æ—¢å­˜ãƒªãƒã‚¸ãƒˆãƒªã‹ã‚‰pull
+        Write-Log "Šù‘¶‚Ì‹¤—LƒŠƒ|ƒWƒgƒŠ‚ğg—p‚µ‚Ü‚·: $RepoPath"
+        # Šù‘¶ƒŠƒ|ƒWƒgƒŠ‚©‚çpull
         if (Test-Online) {
             Push-Location $RepoPath
             try {
-                Write-Log "ãƒªãƒ¢ãƒ¼ãƒˆã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ä¸­..."
-                git pull origin main 2>$null
+                Write-Log "ƒŠƒ‚[ƒg‚©‚çƒf[ƒ^‚ğæ“¾’†..."
+                git pull origin master 2>$null
             } finally {
                 Pop-Location
             }
         }
     }
     
-    # ä½œå“ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚©ãƒ«ãƒ€ã®æº–å‚™
+    # ì•iƒf[ƒ^ƒtƒHƒ‹ƒ_‚Ì€”õ
     $gameDataDir = Join-Path $RepoPath $gameId
     if (-not (Test-Path $gameDataDir)) {
         New-Item -ItemType Directory -Path $gameDataDir -Force | Out-Null
     }
     
-    # .gitignoreå–å¾—ãƒ»é…ç½®
+    # .gitignoreæ“¾E”z’u
     $gitignorePath = Join-Path $gameDataDir ".gitignore"
     if (-not (Test-Path $gitignorePath)) {
         $gitignoreContent = Get-GitignoreContent -GameId $gameId
         $gitignoreContent | Out-File -FilePath $gitignorePath -Encoding UTF8
-        Write-Log ".gitignoreã‚’é…ç½®ã—ã¾ã—ãŸ"
+        Write-Log ".gitignore‚ğ”z’u‚µ‚Ü‚µ‚½"
     }
     
-    # åŒæœŸã‚¢ã‚¤ãƒ†ãƒ ã®ãƒªãƒ³ã‚¯ä½œæˆ
-    Write-Log "ãƒªãƒ³ã‚¯ã‚’ä½œæˆä¸­..."
+    # “¯ŠúƒAƒCƒeƒ€‚ÌƒŠƒ“ƒNì¬
+    Write-Log "ƒŠƒ“ƒN‚ğì¬’†..."
     foreach ($item in $syncItems) {
         $isDirectory = $item.StartsWith("/")
-        $itemName = $item.TrimStart("/")
+        $itemName = $item.TmasterrimStart("/")
         
         $sourcePath = Join-Path $ScriptDir $itemName
         $targetPath = Join-Path $gameDataDir $itemName
         
-        # æ—¢ã«ãƒªãƒ³ã‚¯ã®å ´åˆã¯ã‚¹ã‚­ãƒƒãƒ—
+        # Šù‚ÉƒŠƒ“ƒN‚Ìê‡‚ÍƒXƒLƒbƒv
         if (Test-Path $sourcePath) {
             $itemInfo = Get-Item $sourcePath -Force
             if ($itemInfo.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-                Write-Log "ã‚¹ã‚­ãƒƒãƒ— (æ—¢ã«ãƒªãƒ³ã‚¯): $itemName"
+                Write-Log "ƒXƒLƒbƒv (Šù‚ÉƒŠƒ“ƒN): $itemName"
                 continue
             }
         }
         
         if ($isDirectory) {
-            # ãƒ•ã‚©ãƒ«ãƒ€ã®å‡¦ç†
+            # ƒtƒHƒ‹ƒ_‚Ìˆ—
             if (Test-Path $sourcePath) {
-                # æ—¢å­˜ãƒ•ã‚©ãƒ«ãƒ€ã‚’ç§»å‹•
-                Write-Log "æ—¢å­˜ãƒ•ã‚©ãƒ«ãƒ€ã‚’ç§»å‹•: $itemName"
+                # Šù‘¶ƒtƒHƒ‹ƒ_‚ğˆÚ“®
+                Write-Log "Šù‘¶ƒtƒHƒ‹ƒ_‚ğˆÚ“®: $itemName"
                 if (Test-Path $targetPath) {
-                    # ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«ã‚‚å­˜åœ¨ã™ã‚‹å ´åˆã¯ãƒãƒ¼ã‚¸
+                    # ƒ^[ƒQƒbƒg‚É‚à‘¶İ‚·‚éê‡‚Íƒ}[ƒW
                     Get-ChildItem -Path $sourcePath | ForEach-Object {
                         Move-Item -Path $_.FullName -Destination $targetPath -Force
                     }
@@ -319,112 +319,112 @@ function Invoke-Setup {
                     Move-Item -Path $sourcePath -Destination $targetPath -Force
                 }
             } else {
-                # ã‚¿ãƒ¼ã‚²ãƒƒãƒˆãƒ•ã‚©ãƒ«ãƒ€ãŒãªã‘ã‚Œã°ä½œæˆ
+                # ƒ^[ƒQƒbƒgƒtƒHƒ‹ƒ_‚ª‚È‚¯‚ê‚Îì¬
                 if (-not (Test-Path $targetPath)) {
                     New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
                 }
             }
             
-            # ã‚¸ãƒ£ãƒ³ã‚¯ã‚·ãƒ§ãƒ³ä½œæˆ
+            # ƒWƒƒƒ“ƒNƒVƒ‡ƒ“ì¬
             $result = New-LinkItem -LinkPath $sourcePath -TargetPath $targetPath -IsDirectory $true
             if ($result) {
-                Write-Log "ã‚¸ãƒ£ãƒ³ã‚¯ã‚·ãƒ§ãƒ³ä½œæˆ: $itemName"
+                Write-Log "ƒWƒƒƒ“ƒNƒVƒ‡ƒ“ì¬: $itemName"
             }
         } else {
-            # ãƒ•ã‚¡ã‚¤ãƒ«ã®å‡¦ç†
+            # ƒtƒ@ƒCƒ‹‚Ìˆ—
             if (Test-Path $sourcePath) {
-                # æ—¢å­˜ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ç§»å‹•
-                Write-Log "æ—¢å­˜ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ç§»å‹•: $itemName"
+                # Šù‘¶ƒtƒ@ƒCƒ‹‚ğˆÚ“®
+                Write-Log "Šù‘¶ƒtƒ@ƒCƒ‹‚ğˆÚ“®: $itemName"
                 Move-Item -Path $sourcePath -Destination $targetPath -Force
             } elseif (-not (Test-Path $targetPath)) {
-                # ã‚¿ãƒ¼ã‚²ãƒƒãƒˆãƒ•ã‚¡ã‚¤ãƒ«ãŒãªã‘ã‚Œã°ç©ºãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆï¼ˆã‚²ãƒ¼ãƒ èµ·å‹•æ™‚ã«ä½œæˆã•ã‚Œã‚‹ãŸã‚ã€ãƒªãƒ³ã‚¯ã ã‘ä½œã£ã¦ãŠãï¼‰
-                # ãŸã ã—ãƒãƒ¼ãƒ‰ãƒªãƒ³ã‚¯ã¯å­˜åœ¨ã™ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ãŒå¿…è¦ãªã®ã§ã‚¹ã‚­ãƒƒãƒ—
-                Write-Log "ã‚¹ã‚­ãƒƒãƒ— (ãƒ•ã‚¡ã‚¤ãƒ«æœªå­˜åœ¨): $itemName"
+                # ƒ^[ƒQƒbƒgƒtƒ@ƒCƒ‹‚ª‚È‚¯‚ê‚Î‹óƒtƒ@ƒCƒ‹ì¬iƒQ[ƒ€‹N“®‚Éì¬‚³‚ê‚é‚½‚ßAƒŠƒ“ƒN‚¾‚¯ì‚Á‚Ä‚¨‚­j
+                # ‚½‚¾‚µƒn[ƒhƒŠƒ“ƒN‚Í‘¶İ‚·‚éƒtƒ@ƒCƒ‹‚ª•K—v‚È‚Ì‚ÅƒXƒLƒbƒv
+                Write-Log "ƒXƒLƒbƒv (ƒtƒ@ƒCƒ‹–¢‘¶İ): $itemName"
                 continue
             }
             
-            # ãƒãƒ¼ãƒ‰ãƒªãƒ³ã‚¯ä½œæˆ
+            # ƒn[ƒhƒŠƒ“ƒNì¬
             $result = New-LinkItem -LinkPath $sourcePath -TargetPath $targetPath -IsDirectory $false
             if ($result) {
-                Write-Log "ãƒãƒ¼ãƒ‰ãƒªãƒ³ã‚¯ä½œæˆ: $itemName"
+                Write-Log "ƒn[ƒhƒŠƒ“ƒNì¬: $itemName"
             }
         }
     }
     
-    # ã‚»ãƒƒãƒˆã‚¢ãƒƒãƒ—å®Œäº†ãƒãƒ¼ã‚«ãƒ¼ä½œæˆ
+    # ƒZƒbƒgƒAƒbƒvŠ®—¹ƒ}[ƒJ[ì¬
     $markerPath = Join-Path $ScriptDir ".thgit-setup"
     $gameId | Out-File -FilePath $markerPath -Encoding UTF8
     
-    # ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆä½œæˆ
+    # ƒVƒ‡[ƒgƒJƒbƒgì¬
     $targetExe = Get-TargetExe
     $shortcutName = "$gameId-thgit.lnk"
     $scriptPath = Join-Path $ScriptDir "thgit.ps1"
     $arguments = "-ExecutionPolicy Bypass -File `"$scriptPath`""
     
-    # ãƒ‡ã‚¹ã‚¯ãƒˆãƒƒãƒ—
+    # ƒfƒXƒNƒgƒbƒv
     $desktopPath = [Environment]::GetFolderPath("Desktop")
     $desktopShortcut = Join-Path $desktopPath $shortcutName
     New-Shortcut -ShortcutPath $desktopShortcut -TargetPath "powershell.exe" -Arguments $arguments -WorkingDirectory $ScriptDir -IconLocation $targetExe
-    Write-Log "ãƒ‡ã‚¹ã‚¯ãƒˆãƒƒãƒ—ã«ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã‚’ä½œæˆã—ã¾ã—ãŸ"
+    Write-Log "ƒfƒXƒNƒgƒbƒv‚ÉƒVƒ‡[ƒgƒJƒbƒg‚ğì¬‚µ‚Ü‚µ‚½"
     
-    # ã‚¹ã‚¿ãƒ¼ãƒˆãƒ¡ãƒ‹ãƒ¥ãƒ¼
+    # ƒXƒ^[ƒgƒƒjƒ…[
     $startMenuPath = [Environment]::GetFolderPath("StartMenu")
     $startMenuShortcut = Join-Path $startMenuPath $shortcutName
     New-Shortcut -ShortcutPath $startMenuShortcut -TargetPath "powershell.exe" -Arguments $arguments -WorkingDirectory $ScriptDir -IconLocation $targetExe
-    Write-Log "ã‚¹ã‚¿ãƒ¼ãƒˆãƒ¡ãƒ‹ãƒ¥ãƒ¼ã«ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã‚’ä½œæˆã—ã¾ã—ãŸ"
+    Write-Log "ƒXƒ^[ƒgƒƒjƒ…[‚ÉƒVƒ‡[ƒgƒJƒbƒg‚ğì¬‚µ‚Ü‚µ‚½"
     
-    Write-Log "=== ã‚»ãƒƒãƒˆã‚¢ãƒƒãƒ—å®Œäº† ==="
-    Write-Log "æ¬¡å›ã‹ã‚‰ã¯ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã‹ã‚‰ã‚²ãƒ¼ãƒ ã‚’èµ·å‹•ã—ã¦ãã ã•ã„"
-    Read-Host "Enterã‚­ãƒ¼ã‚’æŠ¼ã—ã¦çµ‚äº†"
+    Write-Log "=== ƒZƒbƒgƒAƒbƒvŠ®—¹ ==="
+    Write-Log "Ÿ‰ñ‚©‚ç‚ÍƒVƒ‡[ƒgƒJƒbƒg‚©‚çƒQ[ƒ€‚ğ‹N“®‚µ‚Ä‚­‚¾‚³‚¢"
+    Read-Host "EnterƒL[‚ğ‰Ÿ‚µ‚ÄI—¹"
 }
 
-# --- ãƒ©ãƒ³ãƒãƒ£ãƒ¼ãƒ•ã‚§ãƒ¼ã‚º ---
+# --- ƒ‰ƒ“ƒ`ƒƒ[ƒtƒF[ƒY ---
 
 function Invoke-PreSync {
     $gameId = Get-GameId
     
-    # ã‚ªãƒ³ãƒ©ã‚¤ãƒ³åˆ¤å®š
+    # ƒIƒ“ƒ‰ƒCƒ“”»’è
     if (-not (Test-Online)) {
-        Write-Log "ã‚ªãƒ•ãƒ©ã‚¤ãƒ³ãƒ¢ãƒ¼ãƒ‰ã§èµ·å‹•ã—ã¾ã™"
+        Write-Log "ƒIƒtƒ‰ƒCƒ“ƒ‚[ƒh‚Å‹N“®‚µ‚Ü‚·"
         return $true
     }
     
-    Write-Log "åŒæœŸä¸­..."
+    Write-Log "“¯Šú’†..."
     Push-Location $RepoPath
     try {
-        # Pullå®Ÿè¡Œ
-        $pullResult = git pull origin main 2>&1
+        # PullÀs
+        $pullResult = git pull origin master 2>&1
         $pullExitCode = $LASTEXITCODE
         
         if ($pullExitCode -eq 0) {
-            Write-Log "åŒæœŸå®Œäº†"
+            Write-Log "“¯ŠúŠ®—¹"
             return $true
         }
         
-        # ã‚³ãƒ³ãƒ•ãƒªã‚¯ãƒˆæ¤œå‡º
+        # ƒRƒ“ƒtƒŠƒNƒgŒŸo
         $status = git status --porcelain
         if ($status -match "^UU|^AA|^DD") {
-            Write-Log "ç«¶åˆãŒç™ºç”Ÿã—ã¾ã—ãŸã€‚"
-            $choice = Read-Host "ã‚µãƒ¼ãƒãƒ¼ä¸Šã®ãƒ‡ãƒ¼ã‚¿ã‚’æ­£ã¨ã—ã¦ä¸Šæ›¸ãã—ã¾ã™ã‹ï¼Ÿ (Y/N)"
+            Write-Log "‹£‡‚ª”­¶‚µ‚Ü‚µ‚½B"
+            $choice = Read-Host "ƒT[ƒo[ã‚Ìƒf[ƒ^‚ğ³‚Æ‚µ‚Äã‘‚«‚µ‚Ü‚·‚©H (Y/N)"
             
             if ($choice -eq "Y" -or $choice -eq "y") {
-                # ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—ä½œæˆ
+                # ƒoƒbƒNƒAƒbƒvì¬
                 New-Backup -GameId $gameId
                 
-                # ãƒªãƒ¢ãƒ¼ãƒˆã«å¼·åˆ¶åŒæœŸ
+                # ƒŠƒ‚[ƒg‚É‹­§“¯Šú
                 git fetch origin
-                git reset --hard origin/main
-                Write-Log "ãƒªãƒ¢ãƒ¼ãƒˆã®ãƒ‡ãƒ¼ã‚¿ã§ä¸Šæ›¸ãã—ã¾ã—ãŸ"
+                git reset --hard origin/master
+                Write-Log "ƒŠƒ‚[ƒg‚Ìƒf[ƒ^‚Åã‘‚«‚µ‚Ü‚µ‚½"
                 return $true
             } else {
-                Write-Log "è­¦å‘Š: åŒæœŸã‚’ã‚¹ã‚­ãƒƒãƒ—ã—ã¾ã—ãŸã€‚ãƒ—ãƒ¬ã‚¤å¾Œã®Pushæ™‚ã«å†åº¦ç«¶åˆã™ã‚‹å¯èƒ½æ€§ãŒã‚ã‚Šã¾ã™ã€‚"
+                Write-Log "Œx: “¯Šú‚ğƒXƒLƒbƒv‚µ‚Ü‚µ‚½BƒvƒŒƒCŒã‚ÌPush‚ÉÄ“x‹£‡‚·‚é‰Â”\«‚ª‚ ‚è‚Ü‚·B"
                 git merge --abort 2>$null
                 return $true
             }
         }
         
-        # ãã®ä»–ã®ã‚¨ãƒ©ãƒ¼
-        Write-Log "Pullä¸­ã«ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸ: $pullResult"
+        # ‚»‚Ì‘¼‚ÌƒGƒ‰[
+        Write-Log "Pull’†‚ÉƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½: $pullResult"
         return $true
         
     } finally {
@@ -435,50 +435,88 @@ function Invoke-PreSync {
 function Invoke-Game {
     $targetExe = Get-TargetExe
     if (-not $targetExe) {
-        Write-Log "ã‚¨ãƒ©ãƒ¼: ã‚²ãƒ¼ãƒ å®Ÿè¡Œãƒ•ã‚¡ã‚¤ãƒ«ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“"
+        Write-Log "ƒGƒ‰[: ƒQ[ƒ€Àsƒtƒ@ƒCƒ‹‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñ"
         return
     }
     
-    Write-Log "ã‚²ãƒ¼ãƒ ã‚’èµ·å‹•ã—ã¾ã™: $(Split-Path -Leaf $targetExe)"
+    Write-Log "ƒQ[ƒ€‚ğ‹N“®‚µ‚Ü‚·: $(Split-Path -Leaf $targetExe)"
     Start-Process -FilePath $targetExe -WorkingDirectory $ScriptDir -Wait
-    Write-Log "ã‚²ãƒ¼ãƒ ãŒçµ‚äº†ã—ã¾ã—ãŸ"
+    Write-Log "ƒQ[ƒ€‚ªI—¹‚µ‚Ü‚µ‚½"
+    
+    # ƒtƒ@ƒCƒ‹‘‚«‚İŠ®—¹‚ğ‘Ò‹@
+    Write-Log "ƒf[ƒ^•Û‘¶‚ğ‘Ò‹@’†..."
+    Start-Sleep -Seconds 2
 }
 
 function Invoke-PostSync {
     Push-Location $RepoPath
     try {
-        # å¤‰æ›´æ¤œçŸ¥
+        # •ÏXŒŸ’m
         $status = git status --porcelain
         if (-not $status) {
-            Write-Log "å¤‰æ›´ã¯ã‚ã‚Šã¾ã›ã‚“"
+            Write-Log "•ÏX‚Í‚ ‚è‚Ü‚¹‚ñ"
             return
         }
         
-        Write-Log "å¤‰æ›´ã‚’æ¤œå‡ºã—ã¾ã—ãŸ"
+        Write-Log "•ÏX‚ğŒŸo‚µ‚Ü‚µ‚½"
         
-        # ã‚ªãƒ³ãƒ©ã‚¤ãƒ³åˆ¤å®š
+        # ƒIƒ“ƒ‰ƒCƒ“”»’è
         if (-not (Test-Online)) {
-            Write-Log "ã‚ªãƒ•ãƒ©ã‚¤ãƒ³ã®ãŸã‚ã€æ¬¡å›èµ·å‹•æ™‚ã«åŒæœŸã—ã¾ã™"
+            Write-Log "ƒIƒtƒ‰ƒCƒ“‚Ì‚½‚ßAŸ‰ñ‹N“®‚É“¯Šú‚µ‚Ü‚·"
             return
         }
         
-        # Commit
+        # CommitiƒŠƒgƒ‰ƒC•t‚«j
         $timestamp = Get-Date -Format "yyyy/MM/dd HH:mm:ss"
         $commitMessage = "AutoSave: $timestamp @ $env:COMPUTERNAME"
         
-        git add -A
+        $maxRetries = 3
+        $retryCount = 0
+        $addSuccess = $false
+        
+        while (-not $addSuccess -and $retryCount -lt $maxRetries) {
+            $retryCount++
+            
+            # git add Às
+            $addResult = git add -A 2>&1
+            $addExitCode = $LASTEXITCODE
+            
+            if ($addExitCode -eq 0) {
+                $addSuccess = $true
+            } else {
+                Write-Log "git add ¸”s (s $retryCount/$maxRetries): $addResult"
+                if ($retryCount -lt $maxRetries) {
+                    Write-Log "ƒŠƒgƒ‰ƒC‚Ü‚Å‘Ò‹@’†..."
+                    Start-Sleep -Seconds 2
+                }
+            }
+        }
+        
+        if (-not $addSuccess) {
+            Write-Log "ƒGƒ‰[: ƒtƒ@ƒCƒ‹‚ÌƒXƒe[ƒWƒ“ƒO‚É¸”s‚µ‚Ü‚µ‚½"
+            Write-Log "ƒtƒ@ƒCƒ‹‚ªƒƒbƒN‚³‚ê‚Ä‚¢‚é‰Â”\«‚ª‚ ‚è‚Ü‚·BŸ‰ñ‹N“®‚ÉÄs‚µ‚Ü‚·B"
+            return
+        }
+        
+        # ƒXƒe[ƒW‚³‚ê‚½•ÏX‚ª‚ ‚é‚©Šm”F
+        $stagedStatus = git diff --cached --name-only
+        if (-not $stagedStatus) {
+            Write-Log "ƒXƒe[ƒW‚³‚ê‚½•ÏX‚ª‚ ‚è‚Ü‚¹‚ñ"
+            return
+        }
+        
         git commit -m $commitMessage
-        Write-Log "ã‚³ãƒŸãƒƒãƒˆå®Œäº†: $commitMessage"
+        Write-Log "ƒRƒ~ƒbƒgŠ®—¹: $commitMessage"
         
         # Push
-        Write-Log "ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰ä¸­..."
-        $pushResult = git push origin main 2>&1
+        Write-Log "ƒAƒbƒvƒ[ƒh’†..."
+        $pushResult = git push origin master 2>&1
         $pushExitCode = $LASTEXITCODE
         
         if ($pushExitCode -eq 0) {
-            Write-Log "ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰å®Œäº†"
+            Write-Log "ƒAƒbƒvƒ[ƒhŠ®—¹"
         } else {
-            Write-Log "ã‚¨ãƒ©ãƒ¼: ãƒ—ãƒƒã‚·ãƒ¥ã«å¤±æ•—ã—ã¾ã—ãŸ: $pushResult"
+            Write-Log "ƒGƒ‰[: ƒvƒbƒVƒ…‚É¸”s‚µ‚Ü‚µ‚½: $pushResult"
         }
         
     } finally {
@@ -487,32 +525,32 @@ function Invoke-PostSync {
 }
 
 function Invoke-Launcher {
-    Write-Log "=== thgit ãƒ©ãƒ³ãƒãƒ£ãƒ¼ ==="
+    Write-Log "=== thgit ƒ‰ƒ“ƒ`ƒƒ[ ==="
     
-    # èµ·å‹•å‰åŒæœŸ
+    # ‹N“®‘O“¯Šú
     $syncOk = Invoke-PreSync
     if (-not $syncOk) {
-        Write-Log "åŒæœŸã«å¤±æ•—ã—ã¾ã—ãŸ"
+        Write-Log "“¯Šú‚É¸”s‚µ‚Ü‚µ‚½"
     }
     
-    # ã‚²ãƒ¼ãƒ èµ·å‹•
+    # ƒQ[ƒ€‹N“®
     Invoke-Game
     
-    # çµ‚äº†å¾ŒåŒæœŸ
+    # I—¹Œã“¯Šú
     Invoke-PostSync
     
-    Write-Log "=== çµ‚äº† ==="
+    Write-Log "=== I—¹ ==="
 }
 
-# --- ãƒ¡ã‚¤ãƒ³å‡¦ç† ---
+# --- ƒƒCƒ“ˆ— ---
 
-# ã‚»ãƒƒãƒˆã‚¢ãƒƒãƒ—å®Œäº†ãƒãƒ¼ã‚«ãƒ¼ã®ç¢ºèª
+# ƒZƒbƒgƒAƒbƒvŠ®—¹ƒ}[ƒJ[‚ÌŠm”F
 $markerPath = Join-Path $ScriptDir ".thgit-setup"
 
 if (Test-Path $markerPath) {
-    # é€šå¸¸ãƒ©ãƒ³ãƒãƒ£ãƒ¼ãƒ¢ãƒ¼ãƒ‰
+    # ’Êíƒ‰ƒ“ƒ`ƒƒ[ƒ‚[ƒh
     Invoke-Launcher
 } else {
-    # åˆå›ã‚»ãƒƒãƒˆã‚¢ãƒƒãƒ—ãƒ¢ãƒ¼ãƒ‰
+    # ‰‰ñƒZƒbƒgƒAƒbƒvƒ‚[ƒh
     Invoke-Setup
 }
