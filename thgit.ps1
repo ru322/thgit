@@ -7,23 +7,42 @@
     Git/GitHubを利用して東方Projectのセーブデータ、リプレイ、設定ファイルを
     複数PC間で同期・管理するためのPowerShellスクリプト
     
+    配置場所: ゲームフォルダ群の親フォルダ
     構成:
-    - 共有リポジトリ: 親フォルダの .thgit に作成
-    - 実データ: .thgit/thxx/ に保存
-    - ゲームフォルダ: ハードリンク(ファイル)/ジャンクション(フォルダ)で接続
-    - リモート: /th06/, /th07/, /th08/ の構成
+    - thgit.ps1          : このスクリプト
+    - .git/              : Gitリポジトリ
+    - .gitignore         : 同期対象ファイルの管理
+    - .gitattributes     : バイナリファイル設定
+    - .thgit-setup       : セットアップ完了マーカー
+    - 東方紅魔郷/        : ゲームフォルダ（ユーザーデータを直接管理）
+    - 東方永夜抄/        : ゲームフォルダ
 #>
 
-# スクリプトのディレクトリを取得
+param(
+    [string]$GamePath
+)
+
+# スクリプトのディレクトリを取得（リポジトリルート）
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ParentDir = Split-Path -Parent $ScriptDir
-$RepoPath = Join-Path $ParentDir ".thgit"
+$MarkerPath = Join-Path $ScriptDir ".thgit-setup"
 
 # --- ユーティリティ関数 ---
 
+# ログファイルパス
+$LogFilePath = Join-Path $ScriptDir "thgit.log"
+
 function Write-Log {
     param([string]$Message)
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logMessage = "[$timestamp] $Message"
     Write-Host "[thgit] $Message"
+    
+    # ファイルにも記録
+    try {
+        Add-Content -Path $LogFilePath -Value $logMessage -Encoding UTF8
+    } catch {
+        # ログ書き込み失敗は無視
+    }
 }
 
 function Test-Online {
@@ -59,27 +78,52 @@ function Install-Git {
     }
 }
 
+function Find-GameFolders {
+    # サブフォルダからthxx.exeを探す
+    $gameFolders = @()
+    
+    Get-ChildItem -Path $ScriptDir -Directory | ForEach-Object {
+        $folder = $_
+        $thExes = Get-ChildItem -Path $folder.FullName -Filter "th*.exe" -ErrorAction SilentlyContinue | 
+                  Where-Object { $_.Name -match "^th[0-9]+\.exe$" }
+        
+        if ($thExes) {
+            $targetExe = $thExes[0].FullName
+            
+            # vpatch.exeがあれば優先
+            $vpatch = Join-Path $folder.FullName "vpatch.exe"
+            if (Test-Path $vpatch) {
+                $targetExe = $vpatch
+            }
+            
+            $gameFolders += @{
+                Path = $folder.FullName
+                Name = $folder.Name
+                GameId = $thExes[0].BaseName
+                TargetExe = $targetExe
+            }
+        }
+    }
+    
+    return $gameFolders
+}
+
 function Get-TargetExe {
+    param([string]$FolderPath)
+    
     # vpatch.exe を優先
-    $vpatch = Join-Path $ScriptDir "vpatch.exe"
+    $vpatch = Join-Path $FolderPath "vpatch.exe"
     if (Test-Path $vpatch) {
         return $vpatch
     }
     
     # thxx.exe を探す
-    $thExes = Get-ChildItem -Path $ScriptDir -Filter "th*.exe" | Where-Object { $_.Name -match "^th[0-9]+\.exe$" }
+    $thExes = Get-ChildItem -Path $FolderPath -Filter "th*.exe" -ErrorAction SilentlyContinue | 
+              Where-Object { $_.Name -match "^th[0-9]+\.exe$" }
     if ($thExes) {
         return $thExes[0].FullName
     }
     
-    return $null
-}
-
-function Get-GameId {
-    $thExes = Get-ChildItem -Path $ScriptDir -Filter "th*.exe" | Where-Object { $_.Name -match "^th[0-9]+\.exe$" }
-    if ($thExes) {
-        return $thExes[0].BaseName
-    }
     return $null
 }
 
@@ -92,123 +136,91 @@ function New-Shortcut {
         [string]$IconLocation
     )
     
-    $WshShell = New-Object -ComObject WScript.Shell
-    $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
-    $Shortcut.TargetPath = $TargetPath
-    $Shortcut.Arguments = $Arguments
-    $Shortcut.WorkingDirectory = $WorkingDirectory
-    if ($IconLocation) {
-        $Shortcut.IconLocation = $IconLocation
+    try {
+        $WshShell = New-Object -ComObject WScript.Shell
+        $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
+        $Shortcut.TargetPath = $TargetPath
+        $Shortcut.Arguments = $Arguments
+        $Shortcut.WorkingDirectory = $WorkingDirectory
+        if ($IconLocation) {
+            $Shortcut.IconLocation = "$IconLocation,0"
+        }
+        $Shortcut.Save()
+    } catch {
+        Write-Log "ショートカット作成エラー: $_"
     }
-    $Shortcut.Save()
 }
 
 function New-Backup {
-    param([string]$GameId)
-    
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
     $backupDir = Join-Path $ScriptDir "_backup_$timestamp"
-    $gameDataDir = Join-Path $RepoPath $GameId
     
     Write-Log "バックアップを作成中: $backupDir"
     
-    if (Test-Path $gameDataDir) {
-        Copy-Item -Path $gameDataDir -Destination $backupDir -Recurse -Force
+    # ゲームフォルダのユーザーデータをバックアップ
+    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+    
+    $gameFolders = Find-GameFolders
+    foreach ($game in $gameFolders) {
+        $gameBackupDir = Join-Path $backupDir $game.Name
+        New-Item -ItemType Directory -Path $gameBackupDir -Force | Out-Null
+        
+        # score.dat, replay/, *.cfg をコピー
+        $scoreDat = Join-Path $game.Path "score.dat"
+        if (Test-Path $scoreDat) {
+            Copy-Item -Path $scoreDat -Destination $gameBackupDir -Force
+        }
+        
+        $replayDir = Join-Path $game.Path "replay"
+        if (Test-Path $replayDir) {
+            Copy-Item -Path $replayDir -Destination $gameBackupDir -Recurse -Force
+        }
+        
+        Get-ChildItem -Path $game.Path -Filter "*.cfg" -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $gameBackupDir -Force
+        }
     }
+    
     Write-Log "バックアップ完了"
 }
 
-function Get-SyncConfig {
-    param([string]$GameId)
+function Initialize-GitIgnore {
+    $gitignorePath = Join-Path $ScriptDir ".gitignore"
     
-    # 1. ローカルのsync.jsonを確認（優先）
-    $localSyncJson = Join-Path $ScriptDir "sync.json"
-    Write-Log "sync.jsonを検索中: $localSyncJson"
-    
-    if (Test-Path $localSyncJson) {
-        Write-Log "ローカルのsync.jsonを検出しました"
-        try {
-            $config = Get-Content $localSyncJson -Raw | ConvertFrom-Json
-            Write-Log "sync.json読み込み成功"
-            return $config
-        } catch {
-            Write-Log "警告: ローカルsync.jsonの解析に失敗しました: $_"
-        }
-    } else {
-        Write-Log "ローカルにsync.jsonが見つかりません"
-    }
-    
-    # 2. リモートからダウンロード
-    $syncJsonUrl = "https://raw.githubusercontent.com/ru322/thgit/main/$GameId/sync.json"
-    Write-Log "リモートからsync.jsonを取得中: $syncJsonUrl"
-    
-    try {
-        $response = Invoke-WebRequest -Uri $syncJsonUrl -UseBasicParsing -TimeoutSec 10
-        $syncConfig = $response.Content | ConvertFrom-Json
-        
-        # ダウンロードしたsync.jsonをローカルに保存
-        $response.Content | Out-File -FilePath $localSyncJson -Encoding UTF8
-        Write-Log "sync.jsonをダウンロードしてローカルに保存しました"
-        
-        return $syncConfig
-    } catch {
-        Write-Log "エラー: sync.jsonの取得に失敗しました"
-        Write-Log "詳細: $_"
-        Write-Log ""
-        Write-Log "sync.jsonをゲームフォルダに手動で配置してください"
-        Write-Log "形式例:"
-        Write-Log '  {"sync-items": ["/replay", "score.dat", "th08.cfg"]}'
-        Read-Host "Enterキーを押して終了"
-        exit 1
-    }
-}
-
-function Get-GitignoreContent {
-    param([string]$GameId)
-    
-    $gitignoreUrl = "https://raw.githubusercontent.com/ru322/thgit/main/$GameId/dot_gitignore"
-    
-    try {
-        $response = Invoke-WebRequest -Uri $gitignoreUrl -UseBasicParsing
-        return $response.Content
-    } catch {
-        # デフォルトの.gitignore
-        return @"
-# Default .gitignore
+    if (-not (Test-Path $gitignorePath)) {
+        $content = @"
+# 全てを無視
 *
+
+# ユーザーデータのみを追跡
+!.gitignore
+!.gitattributes
+
+# thgit.log は除外
+thgit.log
+
 !*/
-!*.rpy
-!*.bak
-!score.dat
-!*.cfg
+!*/score.dat
+!*/replay/
+!*/replay/**
+!*/*.cfg
 "@
+        $content | Out-File -FilePath $gitignorePath -Encoding UTF8
+        Write-Log ".gitignoreを作成しました"
     }
 }
 
-function New-LinkItem {
-    param(
-        [string]$LinkPath,
-        [string]$TargetPath,
-        [bool]$IsDirectory
-    )
+function Initialize-GitAttributes {
+    $gitattributesPath = Join-Path $ScriptDir ".gitattributes"
     
-    if ($IsDirectory) {
-        # フォルダ: ジャンクション（管理者権限不要）
-        cmd /c mklink /J "$LinkPath" "$TargetPath" 2>$null
-        if ($LASTEXITCODE -ne 0) {
-            Write-Log "エラー: ジャンクションの作成に失敗しました: $LinkPath"
-            return $false
-        }
-    } else {
-        # ファイル: ハードリンク（管理者権限不要、同一ドライブ必須）
-        cmd /c mklink /H "$LinkPath" "$TargetPath" 2>$null
-        if ($LASTEXITCODE -ne 0) {
-            Write-Log "エラー: ハードリンクの作成に失敗しました: $LinkPath"
-            Write-Log "※ハードリンクは同一ドライブ内でのみ作成可能です"
-            return $false
-        }
+    if (-not (Test-Path $gitattributesPath)) {
+        $content = @"
+# 全てのファイルをバイナリとして扱う
+* binary
+"@
+        $content | Out-File -FilePath $gitattributesPath -Encoding UTF8
+        Write-Log ".gitattributesを作成しました"
     }
-    return $true
 }
 
 # --- セットアップフェーズ ---
@@ -216,187 +228,149 @@ function New-LinkItem {
 function Invoke-Setup {
     Write-Log "=== 初回セットアップを開始します ==="
     
-    # Git確認・インストール
+    # 1. Git確認・インストール
     if (-not (Test-GitInstalled)) {
         Install-Git
     }
+    Write-Log "Git: OK"
     
-    # 作品ID特定
-    $gameId = Get-GameId
-    if (-not $gameId) {
-        Write-Log "エラー: 対象のゲーム実行ファイルが見つかりません"
-        Read-Host "Enterキーを押して終了"
-        exit 1
-    }
-    Write-Log "検出した作品: $gameId"
+    # 2. Gitリポジトリの初期化
+    $gitDir = Join-Path $ScriptDir ".git"
+    $isNewRepo = $false
     
-    # sync.json取得
-    $syncConfig = Get-SyncConfig -GameId $gameId
-    $syncItems = $syncConfig.'sync-items'
-    Write-Log "同期対象: $($syncItems -join ', ')"
-    
-    # 共有リポジトリの確認・作成
-    $isFirstSetup = -not (Test-Path $RepoPath)
-    
-    if ($isFirstSetup) {
-        Write-Log "共有リポジトリを作成中: $RepoPath"
-        New-Item -ItemType Directory -Path $RepoPath -Force | Out-Null
-        Push-Location $RepoPath
+    if (-not (Test-Path $gitDir)) {
+        Write-Log "Gitリポジトリを初期化中..."
+        Push-Location $ScriptDir
         try {
             git init
+            $isNewRepo = $true
             
             # リモートリポジトリ登録
             $remoteUrl = Read-Host "リモートリポジトリのURLを入力してください"
             if ($remoteUrl) {
                 git remote add origin $remoteUrl
                 Write-Log "リモートリポジトリを登録しました: $remoteUrl"
-                
-                # リモートからpull試行
-                if (Test-Online) {
-                    Write-Log "リモートからデータを取得中..."
-                    git pull origin master 2>$null
-                }
             }
         } finally {
             Pop-Location
         }
     } else {
-        Write-Log "既存の共有リポジトリを使用します: $RepoPath"
-        # 既存リポジトリからpull
-        if (Test-Online) {
-            Push-Location $RepoPath
-            try {
-                Write-Log "リモートからデータを取得中..."
-                git pull origin master 2>$null
-            } finally {
-                Pop-Location
-            }
-        }
+        Write-Log "既存のGitリポジトリを使用します"
     }
     
-    # 作品データフォルダの準備
-    $gameDataDir = Join-Path $RepoPath $gameId
-    if (-not (Test-Path $gameDataDir)) {
-        New-Item -ItemType Directory -Path $gameDataDir -Force | Out-Null
-    }
-    
-    # .gitignore取得・配置
-    $gitignorePath = Join-Path $gameDataDir ".gitignore"
-    if (-not (Test-Path $gitignorePath)) {
-        $gitignoreContent = Get-GitignoreContent -GameId $gameId
-        $gitignoreContent | Out-File -FilePath $gitignorePath -Encoding UTF8
-        Write-Log ".gitignoreを配置しました"
-    }
-    
-    # 同期アイテムのリンク作成
-    Write-Log "リンクを作成中..."
-    foreach ($item in $syncItems) {
-        $isDirectory = $item.StartsWith("/")
-        $itemName = $item.TrimStart("/")
-        
-        # 空文字列チェック（重要: 空だとゲームフォルダ全体が対象になってしまう）
-        if ([string]::IsNullOrWhiteSpace($itemName)) {
-            Write-Log "警告: 無効な同期アイテムをスキップします: '$item'"
-            continue
-        }
-        
-        $sourcePath = Join-Path $ScriptDir $itemName
-        $targetPath = Join-Path $gameDataDir $itemName
-        
-        # 安全チェック: ソースパスがスクリプトディレクトリそのものでないことを確認
-        if ($sourcePath -eq $ScriptDir) {
-            Write-Log "エラー: ゲームフォルダ自体を同期対象にすることはできません"
-            continue
-        }
-        
-        # 既にリンクの場合はスキップ
-        if (Test-Path $sourcePath) {
-            $itemInfo = Get-Item $sourcePath -Force
-            if ($itemInfo.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-                Write-Log "スキップ (既にリンク): $itemName"
-                continue
-            }
-        }
-        
-        if ($isDirectory) {
-            # フォルダの処理
-            if (Test-Path $sourcePath) {
-                # 既存フォルダを移動
-                Write-Log "既存フォルダを移動: $itemName"
-                if (Test-Path $targetPath) {
-                    # ターゲットにも存在する場合はマージ
-                    Get-ChildItem -Path $sourcePath | ForEach-Object {
-                        Move-Item -Path $_.FullName -Destination $targetPath -Force
+    # 3. 初回同期（Pull）- .gitignore等より先に実行
+    if (Test-Online) {
+        Write-Log "リモートからデータを取得中..."
+        Push-Location $ScriptDir
+        try {
+            # リモートブランチの情報を取得
+            git fetch origin 2>$null
+            
+            # リモートにデータがあるか確認
+            $remoteBranch = git ls-remote --heads origin master 2>$null
+            
+            if ($remoteBranch) {
+                Write-Log "リモートにデータが存在します"
+                
+                if ($isNewRepo) {
+                    # 新規リポジトリの場合、リモートを直接チェックアウト
+                    git checkout -b master origin/master 2>$null
+                    if ($LASTEXITCODE -ne 0) {
+                        # ローカルファイルとの衝突がある場合
+                        Write-Log "ローカルファイルとリモートデータの衝突を検出"
+                        Write-Log "リモート優先: サーバーのデータで上書き"
+                        Write-Log "ローカル優先: 現在のデータを維持してマージ"
+                        $choice = Read-Host "どちらを優先しますか？ (R: リモート / L: ローカル) [R]"
+                        
+                        if ($choice -eq "L" -or $choice -eq "l") {
+                            # ローカル優先: 一旦コミットしてからマージ
+                            git add -A
+                            git commit -m "Initial local data"
+                            git branch -M master
+                            git pull origin master --allow-unrelated-histories -X ours
+                            Write-Log "ローカルのデータを維持してマージしました"
+                        } else {
+                            # リモート優先（デフォルト）: バックアップしてリセット
+                            New-Backup
+                            git checkout -f -b master origin/master
+                            Write-Log "リモートのデータで上書きしました"
+                        }
+                    } else {
+                        Write-Log "リモートデータを取得しました"
                     }
-                    Remove-Item -Path $sourcePath -Force
                 } else {
-                    Move-Item -Path $sourcePath -Destination $targetPath -Force
+                    # 既存リポジトリの場合
+                    $pullResult = git pull origin master 2>&1
+                    $pullExitCode = $LASTEXITCODE
+                    
+                    if ($pullExitCode -ne 0) {
+                        Write-Log "Pull中にエラーが発生: $pullResult"
+                        Write-Log "リモート優先で解決します..."
+                        New-Backup
+                        git fetch origin
+                        git reset --hard origin/master
+                        Write-Log "リモートのデータで上書きしました"
+                    } else {
+                        Write-Log "同期完了"
+                    }
                 }
             } else {
-                # ターゲットフォルダがなければ作成
-                if (-not (Test-Path $targetPath)) {
-                    New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
-                }
+                Write-Log "リモートにデータがありません（新規リポジトリ）"
+                # masterブランチを作成
+                git checkout -b master 2>$null
             }
-            
-            # ジャンクション作成
-            $result = New-LinkItem -LinkPath $sourcePath -TargetPath $targetPath -IsDirectory $true
-            if ($result) {
-                Write-Log "ジャンクション作成: $itemName"
-            }
-        } else {
-            # ファイルの処理
-            if (Test-Path $sourcePath) {
-                # 既存ファイルを移動
-                Write-Log "既存ファイルを移動: $itemName"
-                Move-Item -Path $sourcePath -Destination $targetPath -Force
-            } elseif (-not (Test-Path $targetPath)) {
-                # ターゲットファイルがなければ空ファイル作成（ゲーム起動時に作成されるため、リンクだけ作っておく）
-                # ただしハードリンクは存在するファイルが必要なのでスキップ
-                Write-Log "スキップ (ファイル未存在): $itemName"
-                continue
-            }
-            
-            # ハードリンク作成
-            $result = New-LinkItem -LinkPath $sourcePath -TargetPath $targetPath -IsDirectory $false
-            if ($result) {
-                Write-Log "ハードリンク作成: $itemName"
-            }
+        } finally {
+            Pop-Location
         }
+    } else {
+        Write-Log "オフラインのため、同期をスキップします"
+        # オフライン時はmasterブランチを作成
+        Push-Location $ScriptDir
+        git checkout -b master 2>$null
+        Pop-Location
     }
     
-    # セットアップ完了マーカー作成
-    $markerPath = Join-Path $ScriptDir ".thgit-setup"
-    $gameId | Out-File -FilePath $markerPath -Encoding UTF8
+    # 4. .gitignore / .gitattributes の作成（存在しない場合のみ）
+    Initialize-GitIgnore
+    Initialize-GitAttributes
     
-    # ショートカット作成
-    $targetExe = Get-TargetExe
-    $shortcutName = "$gameId-thgit.lnk"
-    $scriptPath = Join-Path $ScriptDir "thgit.ps1"
-    $arguments = "-ExecutionPolicy Bypass -NoExit -File `"$scriptPath`""
+    # 5. ゲームフォルダの探索とショートカット作成
+    $gameFolders = Find-GameFolders
     
-    # デスクトップ
-    $desktopPath = [Environment]::GetFolderPath("Desktop")
-    $desktopShortcut = Join-Path $desktopPath $shortcutName
-    New-Shortcut -ShortcutPath $desktopShortcut -TargetPath "powershell.exe" -Arguments $arguments -WorkingDirectory $ScriptDir -IconLocation $targetExe
-    Write-Log "デスクトップにショートカットを作成しました"
+    if ($gameFolders.Count -eq 0) {
+        Write-Log "警告: ゲームフォルダが見つかりませんでした"
+        Write-Log "thxx.exe を含むフォルダを配置してから再実行してください"
+    } else {
+        Write-Log "検出したゲーム: $($gameFolders.Count) 個"
+        
+        $desktopPath = [Environment]::GetFolderPath("Desktop")
+        $scriptPath = Join-Path $ScriptDir "thgit.ps1"
+        
+        foreach ($game in $gameFolders) {
+            Write-Log "  - $($game.Name) ($($game.GameId))"
+            
+            # ショートカット作成
+            $shortcutName = "$($game.Name).lnk"
+            $arguments = "-ExecutionPolicy Bypass -File `"$scriptPath`" -GamePath `"$($game.Path)`""
+            
+            $desktopShortcut = Join-Path $desktopPath $shortcutName
+            New-Shortcut -ShortcutPath $desktopShortcut -TargetPath "powershell.exe" -Arguments $arguments -WorkingDirectory $ScriptDir -IconLocation $game.TargetExe
+        }
+        
+        Write-Log "デスクトップにショートカットを作成しました"
+    }
     
-    # スタートメニュー
-    $startMenuPath = [Environment]::GetFolderPath("StartMenu")
-    $startMenuShortcut = Join-Path $startMenuPath $shortcutName
-    New-Shortcut -ShortcutPath $startMenuShortcut -TargetPath "powershell.exe" -Arguments $arguments -WorkingDirectory $ScriptDir -IconLocation $targetExe
-    Write-Log "スタートメニューにショートカットを作成しました"
+    # 6. セットアップ完了マーカー作成
+    "setup-complete" | Out-File -FilePath $MarkerPath -Encoding UTF8
     
     Write-Log "=== セットアップ完了 ==="
-    Write-Log "次回からはショートカットからゲームを起動してください"
+    Write-Log "デスクトップのショートカットからゲームを起動してください"
     Read-Host "Enterキーを押して終了"
 }
 
 # --- ランチャーフェーズ ---
 
 function Invoke-PreSync {
-    $gameId = Get-GameId
-    
     # オンライン判定
     if (-not (Test-Online)) {
         Write-Log "オフラインモードで起動します"
@@ -404,7 +378,7 @@ function Invoke-PreSync {
     }
     
     Write-Log "同期中..."
-    Push-Location $RepoPath
+    Push-Location $ScriptDir
     try {
         # Pull実行
         $pullResult = git pull origin master 2>&1
@@ -418,23 +392,16 @@ function Invoke-PreSync {
         # コンフリクト検出
         $status = git status --porcelain
         if ($status -match "^UU|^AA|^DD") {
-            Write-Log "競合が発生しました。"
-            $choice = Read-Host "サーバー上のデータを正として上書きしますか？ (Y/N)"
+            Write-Log "競合が発生しました。リモート優先で解決します..."
             
-            if ($choice -eq "Y" -or $choice -eq "y") {
-                # バックアップ作成
-                New-Backup -GameId $gameId
-                
-                # リモートに強制同期
-                git fetch origin
-                git reset --hard origin/master
-                Write-Log "リモートのデータで上書きしました"
-                return $true
-            } else {
-                Write-Log "警告: 同期をスキップしました。プレイ後のPush時に再度競合する可能性があります。"
-                git merge --abort 2>$null
-                return $true
-            }
+            # バックアップ作成
+            New-Backup
+            
+            # リモートに強制同期
+            git fetch origin
+            git reset --hard origin/master
+            Write-Log "リモートのデータで上書きしました"
+            return $true
         }
         
         # その他のエラー
@@ -447,14 +414,16 @@ function Invoke-PreSync {
 }
 
 function Invoke-Game {
-    $targetExe = Get-TargetExe
+    param([string]$FolderPath)
+    
+    $targetExe = Get-TargetExe -FolderPath $FolderPath
     if (-not $targetExe) {
         Write-Log "エラー: ゲーム実行ファイルが見つかりません"
         return
     }
     
     Write-Log "ゲームを起動します: $(Split-Path -Leaf $targetExe)"
-    Start-Process -FilePath $targetExe -WorkingDirectory $ScriptDir -Wait
+    Start-Process -FilePath $targetExe -WorkingDirectory $FolderPath -Wait
     Write-Log "ゲームが終了しました"
     
     # ファイル書き込み完了を待機
@@ -463,7 +432,7 @@ function Invoke-Game {
 }
 
 function Invoke-PostSync {
-    Push-Location $RepoPath
+    Push-Location $ScriptDir
     try {
         # 変更検知
         $status = git status --porcelain
@@ -530,7 +499,9 @@ function Invoke-PostSync {
         if ($pushExitCode -eq 0) {
             Write-Log "アップロード完了"
         } else {
-            Write-Log "エラー: プッシュに失敗しました: $pushResult"
+            Write-Log "エラー: プッシュに失敗しました"
+            Write-Log "$pushResult"
+            Write-Log "手動で 'git push origin master' を実行してください"
         }
         
     } finally {
@@ -539,7 +510,10 @@ function Invoke-PostSync {
 }
 
 function Invoke-Launcher {
-    Write-Log "=== thgit ランチャー ==="
+    param([string]$FolderPath)
+    
+    $folderName = Split-Path -Leaf $FolderPath
+    Write-Log "=== thgit ランチャー: $folderName ==="
     
     # 起動前同期
     $syncOk = Invoke-PreSync
@@ -548,7 +522,7 @@ function Invoke-Launcher {
     }
     
     # ゲーム起動
-    Invoke-Game
+    Invoke-Game -FolderPath $FolderPath
     
     # 終了後同期
     Invoke-PostSync
@@ -558,12 +532,20 @@ function Invoke-Launcher {
 
 # --- メイン処理 ---
 
-# セットアップ完了マーカーの確認
-$markerPath = Join-Path $ScriptDir ".thgit-setup"
-
-if (Test-Path $markerPath) {
+if (Test-Path $MarkerPath) {
     # 通常ランチャーモード
-    Invoke-Launcher
+    if ($GamePath) {
+        if (Test-Path $GamePath) {
+            Invoke-Launcher -FolderPath $GamePath
+        } else {
+            Write-Log "エラー: 指定されたゲームフォルダが見つかりません: $GamePath"
+            Read-Host "Enterキーを押して終了"
+        }
+    } else {
+        Write-Log "エラー: ゲームフォルダが指定されていません"
+        Write-Log "ショートカットから起動するか、-GamePath パラメータを指定してください"
+        Read-Host "Enterキーを押して終了"
+    }
 } else {
     # 初回セットアップモード
     Invoke-Setup
