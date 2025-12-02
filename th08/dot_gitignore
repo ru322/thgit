@@ -1,9 +1,0 @@
-# .gitignore for th08
-# Ignore All
-*
-!*/
-
-!/replay/*.rpy
-!/backup/*.bak
-!score.dat
-!th08.cfg
