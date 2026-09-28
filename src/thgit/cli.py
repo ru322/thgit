@@ -84,10 +84,15 @@ def doctor(paths: Paths) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     paths = Paths.default(args.home)
+    handler = None
+    logger = logging.getLogger("thgit")
+    previous_level = logger.level
     try:
         paths.state.mkdir(parents=True, exist_ok=True)
-        logging.basicConfig(filename=paths.state / "thgit.log", level=logging.INFO,
-                            format="%(asctime)s %(levelname)s %(message)s", encoding="utf-8")
+        handler = logging.FileHandler(paths.state / "thgit.log", encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
         if args.command == "doctor":
             return doctor(paths)
         with locked(paths.state):
@@ -137,12 +142,17 @@ def main(argv: list[str] | None = None) -> int:
                 if args.game not in config.get("games", {}):
                     raise ThGitError(f"Game not registered: {args.game}")
                 print(shortcut(paths, args.game, args.home))
-        logging.info("Completed %s", args.command)
+        logger.info("Completed %s", args.command)
         return 0
     except (ThGitError, OSError, ValueError, subprocess.SubprocessError) as exc:
-        logging.error("%s: %s", args.command, exc)
+        logger.error("%s: %s", args.command, exc)
         print(f"thgit: {exc}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("thgit: interrupted; if a game was launched, close it before using recover --confirm-stopped.", file=sys.stderr)
         return 130
+    finally:
+        if handler is not None:
+            logger.removeHandler(handler)
+            handler.close()
+        logger.setLevel(previous_level)

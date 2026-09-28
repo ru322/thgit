@@ -28,13 +28,13 @@ def run_game(paths: Paths, config: dict, game_id: str, offline: bool) -> int:
     sync = Sync(paths, config)
     print("Saving and synchronizing before launch...")
     sync.synchronize(offline)
-    logging.info("Starting %s", game_id)
+    logging.getLogger("thgit").info("Starting %s", game_id)
     print(f"Starting {game_id}; waiting for the game and its child processes to exit.")
     write_json(paths.session, {"game": game_id, "pid": os.getpid()})
     # On exceptions or a killed launcher keep the marker; do not assume the game exited.
     result = run(folder, executable, paths.data / "prefixes" / game_id)
     paths.session.unlink()
-    logging.info("%s exited with code %s", game_id, result)
+    logging.getLogger("thgit").info("%s exited with code %s", game_id, result)
     print("Game exited. Saving and synchronizing...")
     sync.synchronize(offline)
     return result

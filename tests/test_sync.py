@@ -248,7 +248,7 @@ class SyncTests(unittest.TestCase):
 
     def test_paths_with_unicode_quotes_and_spaces_round_trip(self):
         config = self.paths.load()
-        self.assertEqual(config["games"]["th06"]["path"], str(self.folder))
+        self.assertEqual(config["games"]["th06"]["path"], str(self.folder.resolve()))
         self.assertEqual(config["games"]["th06"]["exe"], "th06.exe")
 
 

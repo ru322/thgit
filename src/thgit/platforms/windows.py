@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 import subprocess
 import time
+import uuid
 
 
 def run(folder: Path, executable: str, prefix: Path | None = None, arguments: tuple[str, ...] = ()) -> int:
@@ -14,7 +15,7 @@ def run(folder: Path, executable: str, prefix: Path | None = None, arguments: tu
     import win32job
     import win32process
 
-    job = win32job.CreateJobObject(None, None)
+    job = win32job.CreateJobObject(None, "thgit-" + uuid.uuid4().hex)
     process = thread = None
     try:
         process, thread, _, _ = win32process.CreateProcess(
