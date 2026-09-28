@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thgit"
+version = "0.2.0"
+description = "Cross-platform Touhou save synchronization and launcher"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = ["pywin32>=306; sys_platform == 'win32'"]
+
+[project.scripts]
+thgit = "thgit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
